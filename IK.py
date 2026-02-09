@@ -74,9 +74,9 @@ def inverse_kinematics(meta_data, global_joint_positions, global_joint_orientati
                     1. The CCD IK is an iterative algorithm, the loop structure is given
                     2. The CCD IK algorithm is to update the orientation of each joint on the IK chain
                     3. Two vectors are essential for the CCD
-                       * The vector from end joint to current joint
-                       * The vector from target position to current joint
-                    4. The rotation matrix can be obtained by these two vectors
+                       * The vector from end joint to current joint !!!
+                       * The vector from target position to current joint !!!
+                    4. The rotation matrix can be obtained by these two vectors !!!
                 More details about CCD algorithm can be found in the lecture slides.
 
                 Useful functions:
@@ -91,7 +91,7 @@ def inverse_kinematics(meta_data, global_joint_positions, global_joint_orientati
                 '''
                 
                 ########## Code Start ############
-                current_joint_pos = chain_positions[current_idx]
+                current_joint_pos = chain_positions[current_idx] # current joint position in 3D space
                 vec_current_to_end = norm(chain_positions[end_idx] - current_joint_pos) # vector from current joint to end effector
                 vec_current_to_target = norm(target_pose - current_joint_pos) # vector from current joint to target position
 
@@ -103,7 +103,7 @@ def inverse_kinematics(meta_data, global_joint_positions, global_joint_orientati
                 # calculate the rotation axis (using cross product to get the axis!)
                 axis = norm(np.cross(vec_current_to_end, vec_current_to_target))
 
-                # create rotation from axis-angle representation
+                # create rotation from axis-angle representation (this is the rotation matrix)
                 rotation_vec = R.from_rotvec(rot_angle * axis)
 
                 # update the orientation of the current joint

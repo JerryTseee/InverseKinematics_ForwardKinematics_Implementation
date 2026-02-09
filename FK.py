@@ -8,21 +8,21 @@ from viewer import SimpleViewer
 def part1_show_T_pose(viewer, joint_names, joint_parents, joint_offsets):
     '''
     A function to show the T-pose of the skeleton
-    joint_names:    Shape - (J)     a list to store the name of each joit
-    joint_parents:  Shape - (J)     a list to store the parent index of each joint, -1 means no parent
+    joint_names:    Shape - (J)     a list to store the name of each joint
+    joint_parents:  Shape - (J)     a list to store the parent index of each joint, -1 means no parent (then it is the root joint)
     joint_offsets:  Shape - (J, 1, 3)  an array to store the local offset to the parent joint
     '''
-    global_joint_position = np.zeros((len(joint_names), 3))
+    global_joint_position = np.zeros((len(joint_names), 3)) # we want this positions to be the T-pose eventually!
     for joint_idx, parent_idx in enumerate(joint_parents):
         '''
             TODO: How to update global_joint_position by OFFSETS?
             Toy Sample: 
-                Joint1 in (0, 0)
+                Joint1 in (0, 0), it is the root joint
                 the offset between J1 and J2 is (1, 1)
                 the offset between J2 and J3 is (1, 1)
                 the offset between J3 and J4 is (1, 1)
                 Parent -> Childs: J1 -> J2 -> J3 -> J4
-                so the global joint position of J4 is (0, 0) + (1, 1) + (1, 1) + (1, 1) = (3, 3)
+                so the global joint position of J4 is (0, 0) + (1, 1) + (1, 1) + (1, 1) = (3, 3)!!!
             Hints: 
                 1. There is a joint tree with parent-child relationship (joint_idx, parent_idx)
                 2. The OFFSET between joint_idx and parent_idx is known as *joint_offsets[joint_idx]*
@@ -34,7 +34,7 @@ def part1_show_T_pose(viewer, joint_names, joint_parents, joint_offsets):
                    else, the current joint global position = the sum of all parent joint offsets
         '''
         ########## Code Start ############
-        if parent_idx == -1: # no parent joint
+        if parent_idx == -1: # no parent joint, then it is the root joint!!!
             global_joint_position[joint_idx] = [0, 0, 0]
         else:
             # child joint global position = parent joint global position + offset between child and parent
@@ -51,8 +51,8 @@ def part2_forward_kinametic(viewer, joint_names, joint_parents, joint_offsets, j
     A function to calculate the global joint positions and orientations by FK
     F: Frame number;  J: Joint number
    
-    joint_names:    Shape - (J)     a list to store the name of each joit
-    joint_parents:  Shape - (J)     a list to store the parent index of each joint, -1 means no parent
+    joint_names:    Shape - (J)     a list to store the name of each joint
+    joint_parents:  Shape - (J)     a list to store the parent index of each joint, -1 means no parent (then it is the root joint)
     joint_offsets:  Shape - (J, 1, 3)  an array to store the local offset to the parent joint
     joint_positions:    Shape - (F, J, 3)   an array to store the local joint positions
     joint_rotations:    Shape - (F, J, 4)   an array to store the local joint rotation in quaternion representation
@@ -60,6 +60,7 @@ def part2_forward_kinametic(viewer, joint_names, joint_parents, joint_offsets, j
     joint_number = len(joint_names)
     frame_number = joint_rotations.shape[0]
 
+    # below three are our final results, we want to update them by FK eventually!
     global_joint_positions = np.zeros((frame_number, joint_number, 3))
     global_joint_orientations = np.zeros((frame_number, joint_number, 4))
     global_joint_orientations[:, :, 3] = 1.0
@@ -83,7 +84,7 @@ def part2_forward_kinametic(viewer, joint_names, joint_parents, joint_offsets, j
                * One iteration on parents variable is enough to cover all joint chains
         More details:
             1. You can use R.from_quat() to represent a rotation in Scipy format
-               like: r1 = R.from_quat(global_joint_orientations[:, joint_idx, :])
+               like: r1 = R.from_quat(global_joint_orientations[:, joint_idx, :]) ---> this is the rotation of the current joint
             2. Then R.apply() can apply this rotation to any vector
                like: rotated_offset = r1.apply(vector)
             3. new_joint_position = parent_joint_position + parent_joint_rotation.apply(rotated_offset)
@@ -92,7 +93,7 @@ def part2_forward_kinametic(viewer, joint_names, joint_parents, joint_offsets, j
     ########## Code Start ############
     for frame in range(frame_number):
         for joint_idx, parent_idx in enumerate(joint_parents):
-            if parent_idx == -1: # no parent joint
+            if parent_idx == -1: # this is the root joint, so we directly take the local position and rotation!!!
                 global_joint_positions[frame, joint_idx] = joint_positions[frame, joint_idx]
                 global_joint_orientations[frame, joint_idx] = joint_rotations[frame, joint_idx]
             else:
@@ -103,7 +104,7 @@ def part2_forward_kinametic(viewer, joint_names, joint_parents, joint_offsets, j
 
                 child_local_orientation = R.from_quat(joint_rotations[frame, joint_idx])
                 child_global_orientation = parent_orientation * child_local_orientation
-                global_joint_orientations[frame, joint_idx] = child_global_orientation.as_quat()
+                global_joint_orientations[frame, joint_idx] = child_global_orientation.as_quat() # convert rotation to quaternion format!
 
     ########## Code End ############
     if not show_animation:
